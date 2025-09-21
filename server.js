@@ -26,19 +26,23 @@ for (const varName of requiredEnvVars) {
 // CORS 配置
 const allowedOrigins = [
   'http://localhost:5173', 
-  'https://magi-frontend-dei3a527r-valonsides-projects.vercel.app' // 请确保这是您正确的Vercel前端网址
+  'https://magi-frontend-dei3a527r-valonsides-projects.vercel.app' // 再次确认这个URL完全正确
 ];
 
-// 【修正】2. 在 app 创建之后再使用它
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+const corsOptions = {
+  origin: (origin, callback) => {
+    // 允许来自白名单的请求，也允许 REST 工具和服务器到服务器的请求 (origin 为 undefined)
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error(`Origin not allowed by CORS: ${origin}`));
     }
-  }
-}));
+  },
+  credentials: true,
+  optionsSuccessStatus: 200 // for some legacy browsers
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json()); // 解析JSON请求体
 
