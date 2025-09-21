@@ -31,10 +31,11 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // 允许来自白名单的请求，也允许 REST 工具和服务器到服务器的请求 (origin 为 undefined)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      // 【新增】在日志中打印出被拒绝的URL
+      console.error(`CORS 拒绝了来源: ${origin}`); 
       callback(new Error(`Origin not allowed by CORS: ${origin}`));
     }
   },
