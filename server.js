@@ -28,6 +28,14 @@ const qwenApiKey = process.env.QWEN_API_KEY;
 const sparkApiPassword = process.env.SPARK_API_PASSWORD;
 const deepseekApiKey = process.env.DEEPSEEK_API_KEY; // <-- 已更新
 
+const requiredEnvVars = ['QWEN_API_KEY', 'SPARK_API_PASSWORD', 'DEEPSEEK_API_KEY'];
+for (const varName of requiredEnvVars) {
+  if (!process.env[varName]) {
+    console.error(`错误：环境变量 ${varName} 未设置。服务器无法启动。`);
+    process.exit(1); // 以错误码 1 退出程序
+  }
+}
+
 // -----------------------------------
 //  HELPER: AI MODEL CALL FUNCTIONS
 // -----------------------------------
