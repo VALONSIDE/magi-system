@@ -3,7 +3,18 @@
 // -----------------------------------
 require('dotenv').config(); 
 const express = require('express');
-const cors = require('cors');
+const allowedOrigins = ['http://localhost:5173', 'https://magi-frontend-dei3a527r-valonsides-projects.vercel.app'];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // 允许没有来源的请求 (比如服务器到服务器的请求) 和在白名单中的来源
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
 const axios = require('axios');
 
 const app = express();
