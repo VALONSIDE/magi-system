@@ -3,11 +3,35 @@
 // -----------------------------------
 require('dotenv').config(); 
 const express = require('express');
-const allowedOrigins = ['http://localhost:5173', 'https://magi-frontend-dei3a527r-valonsides-projects.vercel.app'];
+const cors = require('cors');
+const axios = require('axios');
 
+// 【修正】1. 先创建 app 实例
+const app = express();
+const PORT = process.env.PORT || 3001; // Render 会提供一个 PORT 环境变量，我们优先使用它
+
+// -----------------------------------
+//  ENVIRONMENT & SECURITY
+// -----------------------------------
+
+// 启动时检查环境变量
+const requiredEnvVars = ['QWEN_API_KEY', 'SPARK_API_PASSWORD', 'DEEPSEEK_API_KEY'];
+for (const varName of requiredEnvVars) {
+  if (!process.env[varName]) {
+    console.error(`错误：环境变量 ${varName} 未设置。服务器无法启动。`);
+    process.exit(1);
+  }
+}
+
+// CORS 配置
+const allowedOrigins = [
+  'http://localhost:5173', 
+  'https://magi-frontend-dei3a527r-valonsides-projects.vercel.app' // 请确保这是您正确的Vercel前端网址
+];
+
+// 【修正】2. 在 app 创建之后再使用它
 app.use(cors({
   origin: function (origin, callback) {
-    // 允许没有来源的请求 (比如服务器到服务器的请求) 和在白名单中的来源
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -15,30 +39,18 @@ app.use(cors({
     }
   }
 }));
-const axios = require('axios');
 
-const app = express();
-const PORT = 3001;
-
-app.use(cors()); 
-app.use(express.json());
+app.use(express.json()); // 解析JSON请求体
 
 // 从 .env 文件中安全地获取API密钥
 const qwenApiKey = process.env.QWEN_API_KEY;
 const sparkApiPassword = process.env.SPARK_API_PASSWORD;
-const deepseekApiKey = process.env.DEEPSEEK_API_KEY; // <-- 已更新
-
-const requiredEnvVars = ['QWEN_API_KEY', 'SPARK_API_PASSWORD', 'DEEPSEEK_API_KEY'];
-for (const varName of requiredEnvVars) {
-  if (!process.env[varName]) {
-    console.error(`错误：环境变量 ${varName} 未设置。服务器无法启动。`);
-    process.exit(1); // 以错误码 1 退出程序
-  }
-}
+const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
 
 // -----------------------------------
 //  HELPER: AI MODEL CALL FUNCTIONS
 // -----------------------------------
+// ... (这部分及之后的所有代码都保持不变，无需修改) ...
 
 const createSystemPrompt = (userContent) => {
   return `你是一个决策辅助系统。请分析以下内容，并做出“同意”或“否定”的决策。
@@ -52,9 +64,7 @@ const createSystemPrompt = (userContent) => {
 "${userContent}"`;
 };
 
-// 调用通义千问 (Balthasar)
 const callQwen = async (content) => {
-  // ... (这部分代码保持不变) ...
   const url = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
   const headers = { 'Authorization': `Bearer ${qwenApiKey}` };
   const body = {
@@ -71,9 +81,7 @@ const callQwen = async (content) => {
   }
 };
 
-// 调用讯飞星火 (Casper)
 const callSpark = async (content) => {
-  // ... (这部分代码保持不变) ...
   const url = 'https://spark-api-open.xf-yun.com/v1/chat/completions';
   const headers = { 'Authorization': `Bearer ${sparkApiPassword}` };
   const body = {
@@ -90,7 +98,6 @@ const callSpark = async (content) => {
   }
 };
 
-// 【已更新】 调用 DeepSeek (Melchior)
 const callDeepSeek = async (content) => {
   const url = 'https://api.deepseek.com/chat/completions';
   const headers = { 
@@ -98,7 +105,7 @@ const callDeepSeek = async (content) => {
     'Content-Type': 'application/json'
   };
   const body = {
-    model: 'deepseek-chat', // 使用文档中推荐的模型
+    model: 'deepseek-chat',
     messages: [{ role: 'system', content: createSystemPrompt(content) }],
     response_format: { type: 'json_object' }
   };
@@ -110,7 +117,6 @@ const callDeepSeek = async (content) => {
     return { decision: 0, explanation: 'DeepSeek模型调用失败。' };
   }
 };
-
 
 // -----------------------------------
 //  MAIN API ENDPOINT
@@ -124,9 +130,8 @@ app.post('/decide', async (req, res) => {
   }
 
   try {
-    // 【已更新】使用 Promise.all 并行调用新的模型组合
     const [deepseekResult, qwenResult, sparkResult] = await Promise.all([
-      callDeepSeek(content), // <-- 已更新
+      callDeepSeek(content),
       callQwen(content),
       callSpark(content)
     ]);
@@ -140,7 +145,7 @@ app.post('/decide', async (req, res) => {
     res.json({
       finalDecision,
       results: [
-        { model: 'MELCHIOR-1', ...deepseekResult }, // <-- 已更新
+        { model: 'MELCHIOR-1', ...deepseekResult },
         { model: 'BALTHASAR-2', ...qwenResult },
         { model: 'CASPER-3', ...sparkResult }
       ]
