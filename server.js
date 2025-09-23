@@ -26,7 +26,7 @@ for (const varName of requiredEnvVars) {
 // CORS 配置
 const allowedOrigins = [
   'http://localhost:5173', 
-  'https://magi-frontend-dei3a527r-valonsides-projects.vercel.app' // 再次确认这个URL完全正确
+  'https://magi-frontend.vercel.app' // <--- 这里是唯一修改过的地方
 ];
 
 const corsOptions = {
@@ -55,7 +55,6 @@ const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
 // -----------------------------------
 //  HELPER: AI MODEL CALL FUNCTIONS
 // -----------------------------------
-// ... (这部分及之后的所有代码都保持不变，无需修改) ...
 
 const createSystemPrompt = (userContent) => {
   return `你是一个决策辅助系统。请分析以下内容，并做出“同意”或“否定”的决策。
