@@ -90,8 +90,8 @@ const callSpark = async (content) => {
   const url = 'https://spark-api-open.xf-yun.com/v1/chat/completions';
   const headers = { 'Authorization': `Bearer ${sparkApiPassword}` };
   const body = {
-    model: 'generalv3.5',
-    messages: [{ role: 'system', content: createSystemPrompt(content) }],
+    model: 'pro-128k',
+    messages: [{ role: 'user', content: createSystemPrompt(content) }],
     response_format: { type: 'json_object' }
   };
   try {
@@ -118,8 +118,17 @@ const callDeepSeek = async (content) => {
     const response = await axios.post(url, body, { headers });
     return JSON.parse(response.data.choices[0].message.content);
   } catch (error) {
-    console.error('Error calling DeepSeek:', error.response ? error.response.data : error.message);
-    return { decision: 0, explanation: 'DeepSeek模型调用失败。' };
+    console.error('--- 讯飞星火 API 调用失败 ---');
+    if (error.response) {
+      // 如果API返回了错误信息，就完整地打印出来
+      console.error('Status:', error.response.status);
+      console.error('Data:', JSON.stringify(error.response.data, null, 2));
+    } else {
+      // 如果是网络层面的错误
+      console.error('Error Message:', error.message);
+    }
+    console.error('-----------------------------');
+    return { decision: 0, explanation: '讯飞星火模型调用失败。' };
   }
 };
 
