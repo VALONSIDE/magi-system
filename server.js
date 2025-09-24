@@ -6,9 +6,8 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 
-// 【修正】1. 先创建 app 实例
 const app = express();
-const PORT = process.env.PORT || 3001; // Render 会提供一个 PORT 环境变量，我们优先使用它
+const PORT = process.env.PORT || 3001; // Railway 会提供一个 PORT 环境变量，我们优先使用它
 
 // -----------------------------------
 //  ENVIRONMENT & SECURITY
@@ -23,10 +22,11 @@ for (const varName of requiredEnvVars) {
   }
 }
 
-// CORS 配置
+// CORS 配置 (关键修改点)
 const allowedOrigins = [
   'http://localhost:5173', 
-  'https://magi-frontend.vercel.app' // <--- 这里是唯一修改过的地方
+  'https://magi-frontend.vercel.app', // 允许来自 Vercel 前端的请求
+  'https://magi-system-production.up.railway.app' // 【新增】允许来自 Railway 自身的请求
 ];
 
 const corsOptions = {
@@ -34,7 +34,6 @@ const corsOptions = {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      // 【新增】在日志中打印出被拒绝的URL
       console.error(`CORS 拒绝了来源: ${origin}`); 
       callback(new Error(`Origin not allowed by CORS: ${origin}`));
     }
@@ -44,7 +43,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
 app.use(express.json()); // 解析JSON请求体
 
 // 从 .env 文件中安全地获取API密钥
@@ -117,17 +115,16 @@ const callDeepSeek = async (content) => {
     const response = await axios.post(url, body, { headers });
     return JSON.parse(response.data.choices[0].message.content);
   } catch (error) {
-    console.error('--- 讯飞星火 API 调用失败 ---');
+    // 【修正】修正了这里的日志文本
+    console.error('--- DeepSeek API 调用失败 ---');
     if (error.response) {
-      // 如果API返回了错误信息，就完整地打印出来
       console.error('Status:', error.response.status);
       console.error('Data:', JSON.stringify(error.response.data, null, 2));
     } else {
-      // 如果是网络层面的错误
       console.error('Error Message:', error.message);
     }
     console.error('-----------------------------');
-    return { decision: 0, explanation: '讯飞星火模型调用失败。' };
+    return { decision: 0, explanation: 'DeepSeek模型调用失败。' }; // 修正返回信息
   }
 };
 
